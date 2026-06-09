@@ -1,4 +1,4 @@
-import { generateJSON } from '@/lib/gemini'
+import { generateJSON } from '@/lib/llm'
 import { Profile, FundedCompany, ApplicationPath, OutreachStrategy } from '@/types'
 
 export async function runApplicationPathAgent(

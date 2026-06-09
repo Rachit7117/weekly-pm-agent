@@ -1,4 +1,4 @@
-import { generateJSON } from '@/lib/gemini'
+import { generateJSON } from '@/lib/llm'
 import { FundedCompany } from '@/types'
 
 async function firecrawlScrape(url: string): Promise<string> {

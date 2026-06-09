@@ -1,4 +1,4 @@
-import { generateJSON } from '@/lib/gemini'
+import { generateJSON } from '@/lib/llm'
 import { FundedCompany, HiringSignal } from '@/types'
 
 async function searchHiringSignals(company: FundedCompany): Promise<string> {

@@ -1,4 +1,4 @@
-import { generateJSON } from '@/lib/gemini'
+import { generateJSON } from '@/lib/llm'
 import { Profile, FundedCompany, FitScore } from '@/types'
 
 export async function runFitScoreAgent(
