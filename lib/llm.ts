@@ -4,6 +4,9 @@
  */
 
 export async function generateJSON<T>(prompt: string): Promise<T> {
+  if (process.env.GROQ_API_KEY) {
+    return callGroq<T>(prompt)
+  }
   if (process.env.GROK_API_KEY) {
     return callGrok<T>(prompt)
   }
@@ -14,6 +17,9 @@ export async function generateJSON<T>(prompt: string): Promise<T> {
 }
 
 export async function generateText(prompt: string): Promise<string> {
+  if (process.env.GROQ_API_KEY) {
+    return callGroqText(prompt)
+  }
   if (process.env.GROK_API_KEY) {
     return callGrokText(prompt)
   }
@@ -21,6 +27,63 @@ export async function generateText(prompt: string): Promise<string> {
     return callNvidiaText(prompt)
   }
   return callGeminiText(prompt)
+}
+
+// ── Groq (ultra-fast free inference — llama-3.3-70b) ─────────────────────────
+
+const GROQ_MODEL = 'llama-3.3-70b-versatile'
+const GROQ_BASE = 'https://api.groq.com/openai/v1'
+
+async function callGroq<T>(prompt: string): Promise<T> {
+  const res = await fetch(`${GROQ_BASE}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful assistant. Always respond with valid JSON only — no markdown, no code fences, just raw JSON.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.2,
+      max_tokens: 4096,
+      response_format: { type: 'json_object' },
+    }),
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Groq error ${res.status}: ${err.slice(0, 300)}`)
+  }
+
+  const data = await res.json()
+  const text: string = data.choices?.[0]?.message?.content || ''
+  return JSON.parse(text) as T
+}
+
+async function callGroqText(prompt: string): Promise<string> {
+  const res = await fetch(`${GROQ_BASE}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.2,
+      max_tokens: 2048,
+    }),
+  })
+
+  if (!res.ok) throw new Error(`Groq error ${res.status}`)
+  const data = await res.json()
+  return data.choices?.[0]?.message?.content || ''
 }
 
 // ── NVIDIA NIM (lowest latency — llama-3.1-8b-instruct) ──────────────────────

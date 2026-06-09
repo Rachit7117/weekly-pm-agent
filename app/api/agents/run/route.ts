@@ -17,14 +17,14 @@ export async function POST(request: Request) {
   }
 
   // Check at least one LLM key is set
-  if (!process.env.NVIDIA_API_KEY && !process.env.GROK_API_KEY && !process.env.GEMINI_API_KEY) {
-    return NextResponse.json({ error: 'No LLM API key set. Add NVIDIA_API_KEY, GROK_API_KEY, or GEMINI_API_KEY in Vercel environment variables.' }, { status: 500 })
+  if (!process.env.GROQ_API_KEY && !process.env.GROK_API_KEY && !process.env.NVIDIA_API_KEY && !process.env.GEMINI_API_KEY) {
+    return NextResponse.json({ error: 'No LLM API key set. Add GROQ_API_KEY in Vercel environment variables.' }, { status: 500 })
   }
   if (!process.env.TAVILY_API_KEY) {
     return NextResponse.json({ error: 'TAVILY_API_KEY is not set in environment variables' }, { status: 500 })
   }
   // Log which LLM will be used
-  const activeLLM = process.env.GROK_API_KEY ? 'Grok' : process.env.NVIDIA_API_KEY ? 'NVIDIA NIM' : 'Gemini'
+  const activeLLM = process.env.GROQ_API_KEY ? 'Groq (llama-3.3-70b)' : process.env.GROK_API_KEY ? 'Grok' : process.env.NVIDIA_API_KEY ? 'NVIDIA NIM' : 'Gemini'
   console.log(`Using LLM: ${activeLLM}`)
 
   const supabase = await createServiceClient()
