@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'TAVILY_API_KEY is not set in environment variables' }, { status: 500 })
   }
   // Log which LLM will be used
-  const activeLLM = process.env.NVIDIA_API_KEY ? 'NVIDIA NIM' : process.env.GROK_API_KEY ? 'Grok' : 'Gemini'
+  const activeLLM = process.env.GROK_API_KEY ? 'Grok' : process.env.NVIDIA_API_KEY ? 'NVIDIA NIM' : 'Gemini'
   console.log(`Using LLM: ${activeLLM}`)
 
   const supabase = await createServiceClient()

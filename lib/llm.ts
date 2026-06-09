@@ -4,21 +4,21 @@
  */
 
 export async function generateJSON<T>(prompt: string): Promise<T> {
-  if (process.env.NVIDIA_API_KEY) {
-    return callNvidia<T>(prompt)
-  }
   if (process.env.GROK_API_KEY) {
     return callGrok<T>(prompt)
+  }
+  if (process.env.NVIDIA_API_KEY) {
+    return callNvidia<T>(prompt)
   }
   return callGemini<T>(prompt)
 }
 
 export async function generateText(prompt: string): Promise<string> {
-  if (process.env.NVIDIA_API_KEY) {
-    return callNvidiaText(prompt)
-  }
   if (process.env.GROK_API_KEY) {
     return callGrokText(prompt)
+  }
+  if (process.env.NVIDIA_API_KEY) {
+    return callNvidiaText(prompt)
   }
   return callGeminiText(prompt)
 }
