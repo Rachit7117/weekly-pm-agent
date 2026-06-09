@@ -49,7 +49,8 @@ export async function POST(request: Request) {
 
     // Step 1: Discovery
     logs.push('Running discovery agent...')
-    const rawCompanies = await runDiscoveryAgent()
+    const { companies: rawCompanies, logs: discoveryLogs } = await runDiscoveryAgent()
+    logs.push(...discoveryLogs)
     logs.push(`Discovery found ${rawCompanies.length} companies`)
 
     if (rawCompanies.length === 0) {
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
         success: true,
         count: 0,
         logs,
-        message: 'Discovery returned 0 companies. Check TAVILY_API_KEY or try again later.',
+        message: `Discovery returned 0 companies. Logs: ${discoveryLogs.join(' | ')}`,
       })
     }
 

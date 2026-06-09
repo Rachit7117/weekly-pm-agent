@@ -8,81 +8,119 @@ interface TavilyResult {
   published_date?: string
 }
 
-interface TavilyResponse {
-  results: TavilyResult[]
+async function searchTavily(query: string): Promise<{ results: TavilyResult[]; error?: string }> {
+  try {
+    const res = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: process.env.TAVILY_API_KEY,
+        query,
+        search_depth: 'basic',
+        max_results: 8,
+        include_answer: false,
+      }),
+    })
+
+    if (!res.ok) {
+      const text = await res.text()
+      return { results: [], error: `Tavily ${res.status}: ${text.slice(0, 200)}` }
+    }
+
+    const data = await res.json()
+    return { results: data.results || [] }
+  } catch (e) {
+    return { results: [], error: String(e) }
+  }
 }
 
-async function searchTavily(query: string): Promise<TavilyResult[]> {
-  const res = await fetch('https://api.tavily.com/search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      api_key: process.env.TAVILY_API_KEY,
-      query,
-      search_depth: 'advanced',
-      max_results: 10,
-      days: 7,
-    }),
-  })
-  if (!res.ok) return []
-  const data: TavilyResponse = await res.json()
-  return data.results || []
-}
+export async function runDiscoveryAgent(): Promise<{
+  companies: Omit<FundedCompany, 'id' | 'created_at'>[]
+  logs: string[]
+}> {
+  const logs: string[] = []
 
-export async function runDiscoveryAgent(): Promise<Omit<FundedCompany, 'id' | 'created_at'>[]> {
   const queries = [
-    'startup funding round announced this week 2025 seed series A',
-    'site:techcrunch.com "raises" "million" funding 2025',
-    'Y Combinator funded startup 2025',
-    'venture capital funding announcement startup this week',
+    'startup raised seed funding 2024 2025',
+    'startup series A funding announced million',
+    'new startup funding round techcrunch',
+    'Y Combinator batch startup launched',
   ]
 
   const allResults: TavilyResult[] = []
+
   for (const query of queries) {
-    try {
-      const results = await searchTavily(query)
+    const { results, error } = await searchTavily(query)
+    if (error) {
+      logs.push(`Tavily query failed: "${query}" → ${error}`)
+    } else {
+      logs.push(`Tavily query OK: "${query}" → ${results.length} results`)
       allResults.push(...results)
-    } catch {
-      // Skip failed queries
     }
   }
 
-  const dedupedContent = allResults
-    .slice(0, 30)
-    .map((r, i) => `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.content.slice(0, 400)}`)
+  logs.push(`Total Tavily results: ${allResults.length}`)
+
+  if (allResults.length === 0) {
+    logs.push('ERROR: No Tavily results — API key may be invalid or quota exceeded')
+    return { companies: [], logs }
+  }
+
+  // Deduplicate by URL
+  const seen = new Set<string>()
+  const deduped = allResults.filter(r => {
+    if (seen.has(r.url)) return false
+    seen.add(r.url)
+    return true
+  })
+
+  const articleText = deduped
+    .slice(0, 20)
+    .map((r, i) => `[${i + 1}] TITLE: ${r.title}\nURL: ${r.url}\nCONTENT: ${r.content.slice(0, 500)}`)
     .join('\n\n---\n\n')
 
-  const prompt = `
-You are a startup funding analyst. Extract funded startups from the articles below.
-Focus on companies that raised Seed, Series A, or Series B rounds (under $50M).
-Only include US-based or remote-first companies.
+  logs.push(`Sending ${deduped.slice(0, 20).length} articles to Gemini for extraction...`)
 
-Return a JSON array of up to 15 companies:
+  const prompt = `
+You are a startup funding analyst. Extract funded startups from these search results.
+
+RULES:
+- Only include companies that raised money (any amount, any stage)
+- Include both US and international startups
+- If funding amount is unknown, write "Undisclosed"
+- If funding round is unknown, write "Seed" as default
+- Extract as many as you can find (up to 15)
+- Do NOT return an empty array — extract whatever you can find
+
+Return ONLY valid JSON in this exact format:
 {
   "companies": [
     {
-      "name": "string",
-      "website": "string or null",
-      "funding_amount": "e.g. $5M",
-      "funding_round": "Seed | Series A | Series B",
-      "funding_date": "YYYY-MM-DD or null",
-      "description": "1-2 sentence product description",
-      "industry": "e.g. B2B SaaS | Fintech | AI/ML | Developer Tools | Healthcare",
-      "team_size": "e.g. 5-10 | 10-25 | 25-50",
-      "stage": "Early | Growth",
-      "source": "URL of source article"
+      "name": "Company Name",
+      "website": "https://example.com or null",
+      "funding_amount": "$5M or Undisclosed",
+      "funding_round": "Seed",
+      "funding_date": null,
+      "description": "What the company does in 1-2 sentences.",
+      "industry": "B2B SaaS",
+      "team_size": "10-25",
+      "stage": "Early",
+      "source": "https://source-url.com"
     }
   ]
 }
 
-Articles:
-${dedupedContent}
+SEARCH RESULTS:
+${articleText}
 `
 
   try {
     const result = await generateJSON<{ companies: Omit<FundedCompany, 'id' | 'created_at'>[] }>(prompt)
-    return result.companies || []
-  } catch {
-    return []
+    const companies = result.companies || []
+    logs.push(`Gemini extracted ${companies.length} companies`)
+    return { companies, logs }
+  } catch (e) {
+    logs.push(`Gemini extraction failed: ${String(e)}`)
+    return { companies: [], logs }
   }
 }

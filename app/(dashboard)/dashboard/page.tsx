@@ -55,11 +55,13 @@ export default function DashboardPage() {
         toast.success(`Found ${data.count} opportunities!`)
         await fetchResults()
       } else if (res.ok && data.count === 0) {
-        toast.warning(data.message || "Agent ran but found 0 opportunities. Check your API keys in Vercel.")
-        console.log("Agent logs:", data.logs)
+        toast.warning("Found 0 companies — check browser console for details")
+        console.warn("=== AGENT LOGS ===")
+        ;(data.logs || []).forEach((l: string) => console.log(l))
       } else {
-        toast.error(data.error || "Agent run failed")
-        console.error("Agent error:", data.error, "\nLogs:", data.logs)
+        toast.error(data.error || "Agent run failed — check browser console")
+        console.error("=== AGENT ERROR ===", data.error)
+        ;(data.logs || []).forEach((l: string) => console.log(l))
       }
     } catch (e) {
       toast.error("Something went wrong: " + String(e))
