@@ -51,14 +51,18 @@ export default function DashboardPage() {
         body: JSON.stringify({ userId: user?.id }),
       })
       const data = await res.json()
-      if (res.ok) {
+      if (res.ok && data.count > 0) {
         toast.success(`Found ${data.count} opportunities!`)
         await fetchResults()
+      } else if (res.ok && data.count === 0) {
+        toast.warning(data.message || "Agent ran but found 0 opportunities. Check your API keys in Vercel.")
+        console.log("Agent logs:", data.logs)
       } else {
         toast.error(data.error || "Agent run failed")
+        console.error("Agent error:", data.error, "\nLogs:", data.logs)
       }
-    } catch {
-      toast.error("Something went wrong")
+    } catch (e) {
+      toast.error("Something went wrong: " + String(e))
     }
     setRunning(false)
   }

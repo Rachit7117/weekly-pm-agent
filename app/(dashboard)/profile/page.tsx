@@ -68,16 +68,16 @@ export default function ProfilePage() {
       let resumeText = profile.resume_text
 
       if (resumeFile) {
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("resumes")
-          .upload(`${user.id}/resume.pdf`, resumeFile, { upsert: true })
-        if (uploadError) {
-          // Resume upload failed — save profile anyway without resume
-          toast.warning("Profile saved, but resume upload failed. Check storage bucket settings.")
+        const fd = new FormData()
+        fd.append("file", resumeFile)
+        const uploadRes = await fetch("/api/resume", { method: "POST", body: fd })
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json()
+          resumeUrl = uploadData.url
+          resumeText = uploadData.name
         } else {
-          const { data: urlData } = supabase.storage.from("resumes").getPublicUrl(uploadData.path)
-          resumeUrl = urlData.publicUrl
-          resumeText = resumeFile.name
+          const uploadErr = await uploadRes.json()
+          toast.warning(`Profile will save without resume: ${uploadErr.error}`)
         }
       }
 

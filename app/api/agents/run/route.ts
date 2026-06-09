@@ -11,68 +11,97 @@ export const maxDuration = 300
 
 export async function POST(request: Request) {
   const { userId } = await request.json()
+
+  if (!userId) {
+    return NextResponse.json({ error: 'userId is required' }, { status: 400 })
+  }
+
+  // Check required env vars upfront
+  if (!process.env.GEMINI_API_KEY) {
+    return NextResponse.json({ error: 'GEMINI_API_KEY is not set in environment variables' }, { status: 500 })
+  }
+  if (!process.env.TAVILY_API_KEY) {
+    return NextResponse.json({ error: 'TAVILY_API_KEY is not set in environment variables' }, { status: 500 })
+  }
+
   const supabase = await createServiceClient()
 
-  // Log the run
   const { data: runLog } = await supabase
     .from('weekly_runs')
     .insert({ status: 'running' })
     .select()
     .single()
 
+  const logs: string[] = []
+
   try {
-    // Get user profile
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single()
 
-    if (!profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    if (profileError || !profile) {
+      return NextResponse.json({ error: `Profile not found: ${profileError?.message}` }, { status: 404 })
     }
 
-    // Step 1: Discovery
-    const rawCompanies = await runDiscoveryAgent()
+    logs.push('Profile loaded')
 
-    // Step 2: Store companies + research each
+    // Step 1: Discovery
+    logs.push('Running discovery agent...')
+    const rawCompanies = await runDiscoveryAgent()
+    logs.push(`Discovery found ${rawCompanies.length} companies`)
+
+    if (rawCompanies.length === 0) {
+      await supabase.from('weekly_runs').update({ status: 'completed', companies_found: 0 }).eq('id', runLog?.id)
+      return NextResponse.json({
+        success: true,
+        count: 0,
+        logs,
+        message: 'Discovery returned 0 companies. Check TAVILY_API_KEY or try again later.',
+      })
+    }
+
     const weekOf = new Date().toISOString().split('T')[0]
     const processedResults = []
 
-    for (const rawCompany of rawCompanies.slice(0, 12)) {
+    for (const rawCompany of rawCompanies.slice(0, 10)) {
       try {
-        // Store raw company
-        const { data: company } = await supabase
+        logs.push(`Processing: ${rawCompany.name}`)
+
+        // Store company
+        const { data: company, error: companyError } = await supabase
           .from('funded_companies')
           .insert(rawCompany)
           .select()
           .single()
 
-        if (!company) continue
+        if (companyError || !company) {
+          logs.push(`  ✗ DB insert failed: ${companyError?.message}`)
+          continue
+        }
 
-        // Step 2: Research
+        // Research
         const enriched = await runResearchAgent(company)
-        await supabase
-          .from('funded_companies')
-          .update(enriched)
-          .eq('id', company.id)
-
+        await supabase.from('funded_companies').update(enriched).eq('id', company.id)
         const fullCompany: FundedCompany = { ...company, ...enriched }
 
-        // Step 3: Hiring signal
+        // Hiring signal
         const hiringSignal = await runHiringSignalAgent(fullCompany)
+        logs.push(`  Hiring score: ${hiringSignal.score}`)
 
-        // Step 4: Fit score
+        // Fit score
         const fitScore = await runFitScoreAgent(profile as Profile, fullCompany)
+        logs.push(`  Fit score: ${fitScore.fit_score}`)
 
-        // Step 5: Application path + outreach
+        // Application path + outreach
         const { application_path, outreach_strategy } = await runApplicationPathAgent(
           profile as Profile,
           fullCompany
         )
 
         // Store result
-        const { data: result } = await supabase
+        const { data: result, error: resultError } = await supabase
           .from('agent_results')
           .insert({
             company_id: company.id,
@@ -88,25 +117,34 @@ export async function POST(request: Request) {
           .select()
           .single()
 
-        if (result) processedResults.push(result)
-      } catch {
-        // Continue with next company on error
+        if (resultError) {
+          logs.push(`  ✗ Result insert failed: ${resultError.message}`)
+        } else if (result) {
+          processedResults.push(result)
+          logs.push(`  ✓ Saved`)
+        }
+      } catch (companyErr) {
+        logs.push(`  ✗ Error: ${String(companyErr)}`)
       }
     }
 
-    // Update run log
     await supabase
       .from('weekly_runs')
       .update({ status: 'completed', companies_found: processedResults.length })
       .eq('id', runLog?.id)
 
-    return NextResponse.json({ success: true, count: processedResults.length })
+    return NextResponse.json({
+      success: true,
+      count: processedResults.length,
+      logs,
+    })
   } catch (error) {
+    logs.push(`Fatal error: ${String(error)}`)
     await supabase
       .from('weekly_runs')
       .update({ status: 'failed', error: String(error) })
       .eq('id', runLog?.id)
 
-    return NextResponse.json({ error: 'Agent run failed' }, { status: 500 })
+    return NextResponse.json({ error: String(error), logs }, { status: 500 })
   }
 }
