@@ -31,7 +31,7 @@ export const weeklyPMAgent = schedules.task({
       if (!profiles?.length) return { message: "No profiles found" }
 
       // Step 1: Discover funded companies (once for all users)
-      const rawCompanies = await runDiscoveryAgent()
+      const { companies: rawCompanies } = await runDiscoveryAgent()
       const weekOf = new Date().toISOString().split("T")[0]
 
       let processedCount = 0
@@ -85,6 +85,7 @@ export const weeklyPMAgent = schedules.task({
         .eq("id", runLog?.id)
 
       return { processed: processedCount, companies: rawCompanies.length }
+
     } catch (error) {
       await supabase
         .from("weekly_runs")
