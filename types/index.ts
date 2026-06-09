@@ -8,9 +8,9 @@ export interface Profile {
   linkedin_url?: string
   current_role_title?: string
   years_experience?: number
-  pm_focus?: PMFocus
+  pm_focus?: PMFocus[]
   work_preference?: WorkPreference
-  preferred_location?: string
+  preferred_locations?: string[]
   resume_url?: string
   resume_text?: string
   ai_model?: string

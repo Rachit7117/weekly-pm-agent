@@ -12,9 +12,9 @@ PM PROFILE:
 - Name: ${profile.name}
 - Current role: ${profile.current_role_title || 'not specified'}
 - Years experience: ${profile.years_experience || 'not specified'}
-- PM focus: ${profile.pm_focus || 'not specified'}
+- PM focus areas: ${(profile.pm_focus || []).join(', ') || 'not specified'}
 - Work preference: ${profile.work_preference || 'open'}
-- Preferred location: ${profile.preferred_location || 'flexible'}
+- Preferred locations: ${(profile.preferred_locations || []).join(', ') || 'flexible'}
 - Resume summary: ${profile.resume_text?.slice(0, 500) || 'not provided'}
 
 COMPANY:
