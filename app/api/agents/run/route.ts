@@ -73,10 +73,16 @@ export async function POST(request: Request) {
       try {
         logs.push(`Processing: ${rawCompany.name}`)
 
+        // Sanitize date — DB requires YYYY-MM-DD or null
+        const sanitizedCompany = {
+          ...rawCompany,
+          funding_date: sanitizeDate(rawCompany.funding_date),
+        }
+
         // Store company
         const { data: company, error: companyError } = await supabase
           .from('funded_companies')
-          .insert(rawCompany)
+          .insert(sanitizedCompany)
           .select()
           .single()
 
@@ -151,4 +157,20 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: String(error), logs }, { status: 500 })
   }
+}
+
+// Convert any date string to YYYY-MM-DD or null
+function sanitizeDate(date: string | null | undefined): string | null {
+  if (!date) return null
+  // Already valid YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date
+  // Try parsing natural language dates like "Nov 2025", "November 2025", "2025"
+  try {
+    const parsed = new Date(date)
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toISOString().split('T')[0]
+    }
+  } catch {}
+  // Can't parse — return null instead of crashing
+  return null
 }
