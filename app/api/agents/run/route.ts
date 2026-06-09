@@ -16,13 +16,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'userId is required' }, { status: 400 })
   }
 
-  // Check required env vars upfront
-  if (!process.env.GEMINI_API_KEY) {
-    return NextResponse.json({ error: 'GEMINI_API_KEY is not set in environment variables' }, { status: 500 })
+  // Check at least one LLM key is set
+  if (!process.env.NVIDIA_API_KEY && !process.env.GROK_API_KEY && !process.env.GEMINI_API_KEY) {
+    return NextResponse.json({ error: 'No LLM API key set. Add NVIDIA_API_KEY, GROK_API_KEY, or GEMINI_API_KEY in Vercel environment variables.' }, { status: 500 })
   }
   if (!process.env.TAVILY_API_KEY) {
     return NextResponse.json({ error: 'TAVILY_API_KEY is not set in environment variables' }, { status: 500 })
   }
+  // Log which LLM will be used
+  const activeLLM = process.env.NVIDIA_API_KEY ? 'NVIDIA NIM' : process.env.GROK_API_KEY ? 'Grok' : 'Gemini'
+  console.log(`Using LLM: ${activeLLM}`)
 
   const supabase = await createServiceClient()
 
