@@ -6,7 +6,7 @@ export interface Profile {
   id: string
   name: string
   linkedin_url?: string
-  current_role?: string
+  current_role_title?: string
   years_experience?: number
   pm_focus?: PMFocus
   work_preference?: WorkPreference

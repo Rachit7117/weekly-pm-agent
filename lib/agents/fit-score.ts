@@ -10,7 +10,7 @@ You are a PM career advisor. Score how well this PM fits this startup (0-100).
 
 PM PROFILE:
 - Name: ${profile.name}
-- Current role: ${profile.current_role || 'not specified'}
+- Current role: ${profile.current_role_title || 'not specified'}
 - Years experience: ${profile.years_experience || 'not specified'}
 - PM focus: ${profile.pm_focus || 'not specified'}
 - Work preference: ${profile.work_preference || 'open'}

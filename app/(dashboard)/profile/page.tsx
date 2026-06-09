@@ -118,8 +118,8 @@ export default function ProfilePage() {
 
           <Field label="Current role">
             <Input
-              value={profile.current_role || ""}
-              onChange={(e) => set("current_role", e.target.value)}
+              value={profile.current_role_title || ""}
+              onChange={(e) => set("current_role_title", e.target.value)}
               placeholder="e.g. Senior PM at Stripe"
               className="h-11 rounded-xl border-gray-200"
             />

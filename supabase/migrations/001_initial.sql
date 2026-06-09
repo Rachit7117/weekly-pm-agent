@@ -6,7 +6,7 @@ create table public.profiles (
   id uuid references auth.users on delete cascade primary key,
   name text not null,
   linkedin_url text,
-  current_role text,
+  current_role_title text,
   years_experience integer,
   pm_focus text check (pm_focus in ('product', 'growth', 'platform', 'ai')),
   work_preference text check (work_preference in ('remote', 'hybrid', 'onsite', 'open')),

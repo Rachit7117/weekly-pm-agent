@@ -10,7 +10,7 @@ You are a senior PM career strategist. Generate a tailored application path and 
 
 PM PROFILE:
 - Name: ${profile.name}
-- Current role: ${profile.current_role || 'PM'}
+- Current role: ${profile.current_role_title || 'PM'}
 - Years experience: ${profile.years_experience || 'a few'} years
 - PM focus: ${profile.pm_focus || 'product'}
 - Work preference: ${profile.work_preference || 'open'}
