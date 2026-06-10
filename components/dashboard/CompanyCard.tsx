@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { DashboardEntry } from "@/types"
 import { getRoundColor, getScoreColor, getScoreBg, cn } from "@/lib/utils"
-import { ChevronDown, ExternalLink, Target, Briefcase, MessageSquare } from "lucide-react"
+import { ChevronDown, ExternalLink, Target, Briefcase, MessageSquare, Globe, Linkedin, BookOpen } from "lucide-react"
 
 interface Props {
   entry: DashboardEntry
@@ -78,6 +78,38 @@ export function CompanyCard({ entry, rank }: Props) {
         <div className="mt-4 grid grid-cols-2 gap-3">
           <ScoreBar label="PM Hiring Signal" score={hiring_score} color="bg-blue-500" />
           <ScoreBar label="Your Fit" score={fit_score} color="bg-violet-500" />
+        </div>
+
+        {/* CTA Buttons */}
+        <div className="flex items-center gap-2 mt-4 flex-wrap">
+          {company.website && (
+            <CTAButton
+              href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
+              icon={<Globe className="w-3.5 h-3.5" />}
+              label="Website"
+              color="text-gray-600 bg-gray-50 border-gray-200 hover:bg-gray-100"
+            />
+          )}
+          {company.website && (
+            <CTAButton
+              href={`${company.website.startsWith("http") ? company.website : `https://${company.website}`}/careers`}
+              icon={<BookOpen className="w-3.5 h-3.5" />}
+              label="Careers"
+              color="text-blue-600 bg-blue-50 border-blue-200 hover:bg-blue-100"
+            />
+          )}
+          <CTAButton
+            href={`https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(company.name)}`}
+            icon={<Linkedin className="w-3.5 h-3.5" />}
+            label="LinkedIn"
+            color="text-[#0077b5] bg-[#e8f4fb] border-[#b3d9ef] hover:bg-[#d0eaf8]"
+          />
+          <CTAButton
+            href={`https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(company.name + " product manager")}`}
+            icon={<Briefcase className="w-3.5 h-3.5" />}
+            label="PM Jobs"
+            color="text-violet-600 bg-violet-50 border-violet-200 hover:bg-violet-100"
+          />
         </div>
       </div>
 
@@ -197,5 +229,22 @@ function DetailRow({ label, value, highlight }: { label: string; value?: string;
       <div className="text-xs text-gray-400 mb-0.5">{label}</div>
       <p className={cn("text-sm", highlight ? "text-gray-900 font-medium" : "text-gray-600")}>{value || "—"}</p>
     </div>
+  )
+}
+
+function CTAButton({ href, icon, label, color }: { href: string; icon: React.ReactNode; label: string; color: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(
+        "inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors",
+        color
+      )}
+    >
+      {icon}
+      {label}
+    </a>
   )
 }

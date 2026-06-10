@@ -79,15 +79,45 @@ export async function POST(request: Request) {
           funding_date: sanitizeDate(rawCompany.funding_date),
         }
 
-        // Store company
-        const { data: company, error: companyError } = await supabase
+        // Check for duplicate by name (avoid reprocessing same company)
+        const { data: existing } = await supabase
           .from('funded_companies')
-          .insert(sanitizedCompany)
-          .select()
+          .select('id')
+          .ilike('name', sanitizedCompany.name)
           .single()
 
-        if (companyError || !company) {
-          logs.push(`  ✗ DB insert failed: ${companyError?.message}`)
+        // Also skip if user already has a result for this company this week
+        if (existing) {
+          const { data: existingResult } = await supabase
+            .from('agent_results')
+            .select('id')
+            .eq('company_id', existing.id)
+            .eq('user_id', userId)
+            .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+            .single()
+          if (existingResult) {
+            logs.push(`  ↩ Skipping duplicate: ${sanitizedCompany.name}`)
+            continue
+          }
+        }
+
+        // Store company (or reuse existing)
+        let company = existing ? { ...existing, ...sanitizedCompany } : null
+        if (!existing) {
+          const { data: inserted, error: companyError } = await supabase
+            .from('funded_companies')
+            .insert(sanitizedCompany)
+            .select()
+            .single()
+          if (companyError || !inserted) {
+            logs.push(`  ✗ DB insert failed: ${companyError?.message}`)
+            continue
+          }
+          company = inserted
+        }
+
+        if (!company) {
+          logs.push(`  ✗ Could not get company record`)
           continue
         }
 
