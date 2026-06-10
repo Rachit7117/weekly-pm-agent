@@ -5,30 +5,26 @@ import { useEffect, useRef } from "react"
 interface Particle {
   x: number
   y: number
-  width: number
-  height: number
+  length: number
+  angle: number
   color: string
-  rotation: number
-  rotationSpeed: number
+  opacity: number
   vx: number
   vy: number
-  opacity: number
-  shape: "rect" | "circle" | "line"
+  angularV: number
 }
 
-// Google / Antigravity color palette
+// Antigravity-exact palette — small dashes, muted multicolor
 const COLORS = [
-  "#4285F4", // Google blue
-  "#EA4335", // Google red
-  "#FBBC05", // Google yellow
-  "#34A853", // Google green
-  "#9C27B0", // Purple
-  "#FF5722", // Deep orange
-  "#00BCD4", // Cyan
-  "#FF9800", // Orange
+  "#4285F4", "#4285F4", "#4285F4", // blue dominant
+  "#EA4335", "#EA4335",             // red
+  "#FBBC05", "#FBBC05",             // yellow
+  "#34A853",                        // green
+  "#9C27B0",                        // purple
+  "#FF7043",                        // orange-red
 ]
 
-function randomBetween(a: number, b: number) {
+function rand(a: number, b: number) {
   return a + Math.random() * (b - a)
 }
 
@@ -48,23 +44,19 @@ export function Particles() {
     resize()
     window.addEventListener("resize", resize)
 
-    // Create varied confetti particles
-    const particles: Particle[] = Array.from({ length: 80 }, () => {
-      const shape = Math.random() < 0.6 ? "rect" : Math.random() < 0.5 ? "circle" : "line"
-      return {
-        x: randomBetween(0, window.innerWidth),
-        y: randomBetween(-window.innerHeight, window.innerHeight),
-        width: randomBetween(4, 10),
-        height: randomBetween(2, 5),
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
-        rotation: randomBetween(0, Math.PI * 2),
-        rotationSpeed: randomBetween(-0.02, 0.02),
-        vx: randomBetween(-0.3, 0.3),
-        vy: randomBetween(0.4, 1.2),
-        opacity: randomBetween(0.3, 0.8),
-        shape,
-      }
-    })
+    // Dense small dashes spread across the whole page — like Antigravity
+    const COUNT = 160
+    const particles: Particle[] = Array.from({ length: COUNT }, () => ({
+      x: rand(0, window.innerWidth),
+      y: rand(0, window.innerHeight),
+      length: rand(3, 9),
+      angle: rand(0, Math.PI * 2),
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      opacity: rand(0.25, 0.65),
+      vx: rand(-0.15, 0.15),
+      vy: rand(-0.12, 0.12),
+      angularV: rand(-0.008, 0.008),
+    }))
 
     let animId: number
 
@@ -74,44 +66,26 @@ export function Particles() {
       for (const p of particles) {
         ctx.save()
         ctx.globalAlpha = p.opacity
-        ctx.fillStyle = p.color
         ctx.strokeStyle = p.color
+        ctx.lineWidth = 1.8
+        ctx.lineCap = "round"
         ctx.translate(p.x, p.y)
-        ctx.rotate(p.rotation)
-
-        if (p.shape === "rect") {
-          ctx.fillRect(-p.width / 2, -p.height / 2, p.width, p.height)
-        } else if (p.shape === "circle") {
-          ctx.beginPath()
-          ctx.arc(0, 0, p.height, 0, Math.PI * 2)
-          ctx.fill()
-        } else {
-          ctx.lineWidth = 1.5
-          ctx.beginPath()
-          ctx.moveTo(-p.width / 2, 0)
-          ctx.lineTo(p.width / 2, 0)
-          ctx.stroke()
-        }
-
+        ctx.rotate(p.angle)
+        ctx.beginPath()
+        ctx.moveTo(-p.length / 2, 0)
+        ctx.lineTo(p.length / 2, 0)
+        ctx.stroke()
         ctx.restore()
 
-        // Update position
         p.x += p.vx
         p.y += p.vy
-        p.rotation += p.rotationSpeed
+        p.angle += p.angularV
 
-        // Slight sway
-        p.vx += Math.sin(p.y * 0.01) * 0.01
-
-        // Reset when off screen bottom
-        if (p.y > canvas.height + 20) {
-          p.y = -20
-          p.x = randomBetween(0, canvas.width)
-          p.vx = randomBetween(-0.3, 0.3)
-          p.vy = randomBetween(0.4, 1.2)
-        }
+        // Wrap around edges so density stays uniform
         if (p.x < -20) p.x = canvas.width + 20
         if (p.x > canvas.width + 20) p.x = -20
+        if (p.y < -20) p.y = canvas.height + 20
+        if (p.y > canvas.height + 20) p.y = -20
       }
 
       animId = requestAnimationFrame(draw)
@@ -129,7 +103,6 @@ export function Particles() {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 pointer-events-none"
-      style={{ opacity: 0.55 }}
     />
   )
 }

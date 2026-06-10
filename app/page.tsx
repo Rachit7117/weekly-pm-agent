@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Particles } from "@/components/layout/Particles"
+import { TypewriterText } from "@/components/layout/TypewriterText"
 
 export default function Home() {
   return (
@@ -30,40 +31,47 @@ export default function Home() {
 
       {/* Hero */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 pb-24">
-        <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-4 py-1.5 text-xs text-gray-600 mb-8">
+
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full px-4 py-1.5 text-xs text-gray-600 mb-8 shadow-sm">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           Weekly agent · runs every Monday
         </div>
 
+        {/* Headline with typewriter */}
         <h1 className="text-6xl sm:text-7xl font-bold tracking-tight text-gray-950 max-w-3xl leading-[1.05] mb-6">
-          Land your next PM role at a{" "}
-          <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-rose-500 bg-clip-text text-transparent">
-            funded startup
-          </span>
+          <TypewriterText
+            text="Land your next PM role at a funded startup"
+            speed={35}
+            delay={300}
+            className="whitespace-pre-wrap"
+          />
         </h1>
 
-        <p className="text-lg text-gray-500 max-w-xl mb-10 leading-relaxed">
+        {/* Subtext — fades in after headline */}
+        <p className="text-lg text-gray-500 max-w-xl mb-10 leading-relaxed animate-fade-in">
           Every week, an AI agent discovers recently funded startups, scores your PM fit,
           and generates a tailored application path — so you know exactly how to get in.
         </p>
 
-        <div className="flex items-center gap-4">
+        {/* CTAs */}
+        <div className="flex items-center gap-4 animate-fade-in">
           <Link
             href="/signup"
-            className="text-base font-medium bg-gray-950 text-white px-7 py-3.5 rounded-full hover:bg-gray-800 transition-all hover:scale-[1.02]"
+            className="text-base font-medium bg-gray-950 text-white px-7 py-3.5 rounded-full hover:bg-gray-800 transition-all hover:scale-[1.02] shadow-sm"
           >
             Create your profile
           </Link>
           <Link
             href="/login"
-            className="text-base font-medium text-gray-700 bg-gray-100 px-7 py-3.5 rounded-full hover:bg-gray-200 transition-all"
+            className="text-base font-medium text-gray-700 bg-white border border-gray-200 px-7 py-3.5 rounded-full hover:bg-gray-50 transition-all shadow-sm"
           >
             Sign in
           </Link>
         </div>
 
         {/* Feature pills */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mt-16">
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-16 animate-fade-in">
           {[
             { color: "bg-blue-100 text-blue-700", label: "Funding discovery" },
             { color: "bg-violet-100 text-violet-700", label: "PM hiring score" },
@@ -71,7 +79,10 @@ export default function Home() {
             { color: "bg-rose-100 text-rose-700", label: "Outreach strategy" },
             { color: "bg-amber-100 text-amber-700", label: "Application path" },
           ].map((f) => (
-            <span key={f.label} className={`${f.color} text-xs font-medium px-3.5 py-1.5 rounded-full`}>
+            <span
+              key={f.label}
+              className={`${f.color} text-xs font-medium px-3.5 py-1.5 rounded-full border border-transparent`}
+            >
               {f.label}
             </span>
           ))}
