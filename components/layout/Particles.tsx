@@ -10,27 +10,38 @@ interface Particle {
   color: string
   angle: number
   angularV: number
-  vy: number        // falling speed
-  vx: number        // slight horizontal drift
-  opacity: number
+  vy: number      // rising speed (negative = up)
+  vx: number      // horizontal drift
+  life: number    // 0→1, used for fade in/out
+  lifeSpeed: number
 }
 
-// Equal mix of all Google colors — matches video exactly
+// Google brand palette only
 const COLORS = [
-  "#4285F4", // blue
-  "#3367D6", // dark blue
-  "#EA4335", // red
-  "#C62828", // dark red
-  "#FBBC05", // yellow
-  "#F57F17", // dark yellow
-  "#34A853", // green
-  "#1B5E20", // dark green
-  "#9C27B0", // purple
-  "#FF7043", // orange
+  "#4285F4", // Google blue
+  "#EA4335", // Google red
+  "#FBBC05", // Google yellow
+  "#34A853", // Google green
 ]
 
 function rand(a: number, b: number) {
   return a + Math.random() * (b - a)
+}
+
+function makeParticle(canvasWidth: number, canvasHeight: number): Particle {
+  return {
+    x: rand(0, canvasWidth),
+    y: rand(canvasHeight * 0.4, canvasHeight + 40), // spawn in lower portion
+    w: rand(8, 18),     // slightly longer dashes
+    h: rand(2, 4),      // thin
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    angle: rand(0, Math.PI * 2),
+    angularV: rand(-0.025, 0.025),
+    vy: rand(0.5, 1.4),         // upward speed (subtracted from y)
+    vx: rand(-0.4, 0.4),        // gentle horizontal drift
+    life: rand(0, 1),           // stagger initial life phase
+    lifeSpeed: rand(0.003, 0.007),
+  }
 }
 
 export function Particles() {
@@ -42,68 +53,63 @@ export function Particles() {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
+    let W = window.innerWidth
+    let H = window.innerHeight
+
     const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      W = window.innerWidth
+      H = window.innerHeight
+      canvas.width = W
+      canvas.height = H
     }
     resize()
     window.addEventListener("resize", resize)
 
-    // ~150 short rectangular dashes falling like confetti
-    const COUNT = 150
-    const particles: Particle[] = Array.from({ length: COUNT }, () => ({
-      x: rand(0, window.innerWidth),
-      y: rand(-window.innerHeight, window.innerHeight), // stagger start
-      w: rand(6, 14),    // short dash width
-      h: rand(2, 4),     // thin dash height
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      angle: rand(0, Math.PI * 2),
-      angularV: rand(-0.03, 0.03),  // slow tumble
-      vy: rand(0.6, 1.8),           // falling down
-      vx: rand(-0.3, 0.3),          // slight sway
-      opacity: rand(0.4, 0.85),
-    }))
+    const COUNT = 120
+    const particles: Particle[] = Array.from({ length: COUNT }, () =>
+      makeParticle(W, H)
+    )
 
     let animId: number
 
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.clearRect(0, 0, W, H)
 
       for (const p of particles) {
+        // life drives a smooth bell-curve opacity: 0→peak→0
+        const alpha = Math.sin(p.life * Math.PI) * 0.7
+
         ctx.save()
-        ctx.globalAlpha = p.opacity
+        ctx.globalAlpha = Math.max(0, alpha)
         ctx.fillStyle = p.color
         ctx.translate(p.x, p.y)
         ctx.rotate(p.angle)
-        // Rounded rectangle dash
+
+        // Pill-shaped dash
         const r = p.h / 2
         ctx.beginPath()
-        ctx.moveTo(-p.w / 2 + r, -p.h / 2)
-        ctx.lineTo(p.w / 2 - r, -p.h / 2)
-        ctx.arcTo(p.w / 2, -p.h / 2, p.w / 2, p.h / 2, r)
-        ctx.lineTo(p.w / 2 - r, p.h / 2)
-        ctx.arcTo(-p.w / 2, p.h / 2, -p.w / 2, -p.h / 2, r)
+        ctx.moveTo(-p.w / 2 + r, -r)
+        ctx.lineTo(p.w / 2 - r, -r)
+        ctx.arcTo(p.w / 2, -r, p.w / 2, r, r)
+        ctx.lineTo(p.w / 2 - r, r)
+        ctx.arcTo(-p.w / 2, r, -p.w / 2, -r, r)
         ctx.closePath()
         ctx.fill()
         ctx.restore()
 
-        // Update — falling with tumble
-        p.y += p.vy
-        p.x += p.vx
+        // Move upward with tumble
+        p.y -= p.vy
+        p.x += p.vx + Math.sin(p.y * 0.012) * 0.12  // gentle wave sway
         p.angle += p.angularV
+        p.life += p.lifeSpeed
 
-        // Slight sway
-        p.vx += Math.sin(p.y * 0.015) * 0.008
-
-        // Reset to top when off bottom
-        if (p.y > canvas.height + 20) {
-          p.y = -20
-          p.x = rand(0, canvas.width)
-          p.vx = rand(-0.3, 0.3)
-          p.vy = rand(0.6, 1.8)
+        // Respawn when life cycle complete or drifted off screen
+        if (p.life >= 1 || p.y < -20 || p.x < -30 || p.x > W + 30) {
+          const fresh = makeParticle(W, H)
+          fresh.life = 0   // always start fresh from bottom
+          fresh.y = rand(H * 0.6, H + 20)
+          Object.assign(p, fresh)
         }
-        if (p.x < -20) p.x = canvas.width + 20
-        if (p.x > canvas.width + 20) p.x = -20
       }
 
       animId = requestAnimationFrame(draw)
