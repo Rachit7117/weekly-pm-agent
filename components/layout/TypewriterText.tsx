@@ -5,14 +5,14 @@ import { useEffect, useState } from "react"
 interface Props {
   text: string
   className?: string
-  delay?: number       // ms before starting
-  speed?: number       // ms per character
+  delay?: number
+  speed?: number
 }
 
-export function TypewriterText({ text, className, delay = 200, speed = 38 }: Props) {
+export function TypewriterText({ text, className, delay = 0, speed = 45 }: Props) {
   const [displayed, setDisplayed] = useState("")
-  const [started, setStarted] = useState(false)
   const [done, setDone] = useState(false)
+  const [started, setStarted] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => setStarted(true), delay)
@@ -21,7 +21,10 @@ export function TypewriterText({ text, className, delay = 200, speed = 38 }: Pro
 
   useEffect(() => {
     if (!started) return
-    if (displayed.length >= text.length) { setDone(true); return }
+    if (displayed.length >= text.length) {
+      setDone(true)
+      return
+    }
     const t = setTimeout(() => {
       setDisplayed(text.slice(0, displayed.length + 1))
     }, speed)
@@ -32,7 +35,17 @@ export function TypewriterText({ text, className, delay = 200, speed = 38 }: Pro
     <span className={className}>
       {displayed}
       {!done && (
-        <span className="inline-block w-[3px] h-[0.85em] bg-gray-950 ml-[2px] align-middle animate-pulse" />
+        // Rainbow gradient cursor — exactly like Antigravity
+        <span
+          className="inline-block align-middle ml-[2px] animate-pulse"
+          style={{
+            width: "3px",
+            height: "0.8em",
+            background: "linear-gradient(to bottom, #4285F4, #EA4335, #FBBC05, #34A853, #9C27B0)",
+            borderRadius: "2px",
+            verticalAlign: "middle",
+          }}
+        />
       )}
     </span>
   )

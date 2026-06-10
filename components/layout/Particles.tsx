@@ -5,22 +5,28 @@ import { useEffect, useRef } from "react"
 interface Particle {
   x: number
   y: number
-  size: number
+  w: number
+  h: number
   color: string
+  angle: number
+  angularV: number
+  vy: number        // falling speed
+  vx: number        // slight horizontal drift
   opacity: number
-  vx: number
-  vy: number
 }
 
-// Exact Antigravity palette — blue dominant, sparse accent colors
+// Equal mix of all Google colors — matches video exactly
 const COLORS = [
-  "#4285F4", "#4285F4", "#4285F4", "#4285F4", "#4285F4", // blue ~60%
-  "#3367D6", "#3367D6",                                   // darker blue
-  "#EA4335", "#EA4335",                                   // red ~15%
-  "#FBBC05",                                              // yellow ~8%
-  "#34A853",                                              // green ~8%
-  "#9C27B0",                                              // purple ~5%
-  "#FF7043",                                              // orange ~4%
+  "#4285F4", // blue
+  "#3367D6", // dark blue
+  "#EA4335", // red
+  "#C62828", // dark red
+  "#FBBC05", // yellow
+  "#F57F17", // dark yellow
+  "#34A853", // green
+  "#1B5E20", // dark green
+  "#9C27B0", // purple
+  "#FF7043", // orange
 ]
 
 function rand(a: number, b: number) {
@@ -43,16 +49,19 @@ export function Particles() {
     resize()
     window.addEventListener("resize", resize)
 
-    // Sparse dots spread across full viewport — exactly like Antigravity
-    const COUNT = 70
+    // ~150 short rectangular dashes falling like confetti
+    const COUNT = 150
     const particles: Particle[] = Array.from({ length: COUNT }, () => ({
       x: rand(0, window.innerWidth),
-      y: rand(0, window.innerHeight),
-      size: Math.random() < 0.7 ? rand(1.5, 2.5) : rand(3, 4.5), // mostly tiny
+      y: rand(-window.innerHeight, window.innerHeight), // stagger start
+      w: rand(6, 14),    // short dash width
+      h: rand(2, 4),     // thin dash height
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      opacity: rand(0.3, 0.7),
-      vx: rand(-0.08, 0.08), // extremely slow drift
-      vy: rand(-0.06, 0.06),
+      angle: rand(0, Math.PI * 2),
+      angularV: rand(-0.03, 0.03),  // slow tumble
+      vy: rand(0.6, 1.8),           // falling down
+      vx: rand(-0.3, 0.3),          // slight sway
+      opacity: rand(0.4, 0.85),
     }))
 
     let animId: number
@@ -64,20 +73,37 @@ export function Particles() {
         ctx.save()
         ctx.globalAlpha = p.opacity
         ctx.fillStyle = p.color
+        ctx.translate(p.x, p.y)
+        ctx.rotate(p.angle)
+        // Rounded rectangle dash
+        const r = p.h / 2
         ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+        ctx.moveTo(-p.w / 2 + r, -p.h / 2)
+        ctx.lineTo(p.w / 2 - r, -p.h / 2)
+        ctx.arcTo(p.w / 2, -p.h / 2, p.w / 2, p.h / 2, r)
+        ctx.lineTo(p.w / 2 - r, p.h / 2)
+        ctx.arcTo(-p.w / 2, p.h / 2, -p.w / 2, -p.h / 2, r)
+        ctx.closePath()
         ctx.fill()
         ctx.restore()
 
-        // Very slow drift
-        p.x += p.vx
+        // Update — falling with tumble
         p.y += p.vy
+        p.x += p.vx
+        p.angle += p.angularV
 
-        // Wrap around edges seamlessly
-        if (p.x < -10) p.x = canvas.width + 10
-        if (p.x > canvas.width + 10) p.x = -10
-        if (p.y < -10) p.y = canvas.height + 10
-        if (p.y > canvas.height + 10) p.y = -10
+        // Slight sway
+        p.vx += Math.sin(p.y * 0.015) * 0.008
+
+        // Reset to top when off bottom
+        if (p.y > canvas.height + 20) {
+          p.y = -20
+          p.x = rand(0, canvas.width)
+          p.vx = rand(-0.3, 0.3)
+          p.vy = rand(0.6, 1.8)
+        }
+        if (p.x < -20) p.x = canvas.width + 20
+        if (p.x > canvas.width + 20) p.x = -20
       }
 
       animId = requestAnimationFrame(draw)

@@ -42,20 +42,20 @@ export default function Home() {
         <h1 className="text-6xl sm:text-7xl font-bold tracking-tight text-gray-950 max-w-3xl leading-[1.05] mb-6">
           <TypewriterText
             text="Land your next PM role at a funded startup"
-            speed={35}
-            delay={300}
+            speed={42}
+            delay={0}
             className="whitespace-pre-wrap"
           />
         </h1>
 
-        {/* Subtext — fades in after headline */}
-        <p className="text-lg text-gray-500 max-w-xl mb-10 leading-relaxed animate-fade-in">
+        {/* Subtext */}
+        <p className="text-lg text-gray-500 max-w-xl mb-10 leading-relaxed">
           Every week, an AI agent discovers recently funded startups, scores your PM fit,
           and generates a tailored application path — so you know exactly how to get in.
         </p>
 
         {/* CTAs */}
-        <div className="flex items-center gap-4 animate-fade-in">
+        <div className="flex items-center gap-4">
           <Link
             href="/signup"
             className="text-base font-medium bg-gray-950 text-white px-7 py-3.5 rounded-full hover:bg-gray-800 transition-all hover:scale-[1.02] shadow-sm"
@@ -71,7 +71,7 @@ export default function Home() {
         </div>
 
         {/* Feature pills */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mt-16 animate-fade-in">
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-16">
           {[
             { color: "bg-blue-100 text-blue-700", label: "Funding discovery" },
             { color: "bg-violet-100 text-violet-700", label: "PM hiring score" },
