@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { DashboardEntry } from "@/types"
 import { getRoundColor, getScoreColor, getScoreBg, cn } from "@/lib/utils"
-import { ChevronDown, ExternalLink, Target, Briefcase, MessageSquare, Globe, Linkedin, BookOpen } from "lucide-react"
+import { ChevronDown, ExternalLink, Target, Briefcase, MessageSquare, Globe, BookOpen } from "lucide-react"
 
 interface Props {
   entry: DashboardEntry
@@ -100,7 +100,7 @@ export function CompanyCard({ entry, rank }: Props) {
           )}
           <CTAButton
             href={`https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(company.name)}`}
-            icon={<Linkedin className="w-3.5 h-3.5" />}
+            icon={<svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>}
             label="LinkedIn"
             color="text-[#0077b5] bg-[#e8f4fb] border-[#b3d9ef] hover:bg-[#d0eaf8]"
           />

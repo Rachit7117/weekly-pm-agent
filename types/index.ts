@@ -23,7 +23,7 @@ export interface FundedCompany {
   website?: string
   funding_amount?: string
   funding_round?: string
-  funding_date?: string
+  funding_date?: string | null
   description?: string
   industry?: string
   team_size?: string
