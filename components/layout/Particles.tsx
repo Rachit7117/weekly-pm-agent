@@ -5,23 +5,22 @@ import { useEffect, useRef } from "react"
 interface Particle {
   x: number
   y: number
-  length: number
-  angle: number
+  size: number
   color: string
   opacity: number
   vx: number
   vy: number
-  angularV: number
 }
 
-// Antigravity-exact palette — small dashes, muted multicolor
+// Exact Antigravity palette — blue dominant, sparse accent colors
 const COLORS = [
-  "#4285F4", "#4285F4", "#4285F4", // blue dominant
-  "#EA4335", "#EA4335",             // red
-  "#FBBC05", "#FBBC05",             // yellow
-  "#34A853",                        // green
-  "#9C27B0",                        // purple
-  "#FF7043",                        // orange-red
+  "#4285F4", "#4285F4", "#4285F4", "#4285F4", "#4285F4", // blue ~60%
+  "#3367D6", "#3367D6",                                   // darker blue
+  "#EA4335", "#EA4335",                                   // red ~15%
+  "#FBBC05",                                              // yellow ~8%
+  "#34A853",                                              // green ~8%
+  "#9C27B0",                                              // purple ~5%
+  "#FF7043",                                              // orange ~4%
 ]
 
 function rand(a: number, b: number) {
@@ -44,18 +43,16 @@ export function Particles() {
     resize()
     window.addEventListener("resize", resize)
 
-    // Dense small dashes spread across the whole page — like Antigravity
-    const COUNT = 160
+    // Sparse dots spread across full viewport — exactly like Antigravity
+    const COUNT = 70
     const particles: Particle[] = Array.from({ length: COUNT }, () => ({
       x: rand(0, window.innerWidth),
       y: rand(0, window.innerHeight),
-      length: rand(3, 9),
-      angle: rand(0, Math.PI * 2),
+      size: Math.random() < 0.7 ? rand(1.5, 2.5) : rand(3, 4.5), // mostly tiny
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      opacity: rand(0.25, 0.65),
-      vx: rand(-0.15, 0.15),
-      vy: rand(-0.12, 0.12),
-      angularV: rand(-0.008, 0.008),
+      opacity: rand(0.3, 0.7),
+      vx: rand(-0.08, 0.08), // extremely slow drift
+      vy: rand(-0.06, 0.06),
     }))
 
     let animId: number
@@ -66,26 +63,21 @@ export function Particles() {
       for (const p of particles) {
         ctx.save()
         ctx.globalAlpha = p.opacity
-        ctx.strokeStyle = p.color
-        ctx.lineWidth = 1.8
-        ctx.lineCap = "round"
-        ctx.translate(p.x, p.y)
-        ctx.rotate(p.angle)
+        ctx.fillStyle = p.color
         ctx.beginPath()
-        ctx.moveTo(-p.length / 2, 0)
-        ctx.lineTo(p.length / 2, 0)
-        ctx.stroke()
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+        ctx.fill()
         ctx.restore()
 
+        // Very slow drift
         p.x += p.vx
         p.y += p.vy
-        p.angle += p.angularV
 
-        // Wrap around edges so density stays uniform
-        if (p.x < -20) p.x = canvas.width + 20
-        if (p.x > canvas.width + 20) p.x = -20
-        if (p.y < -20) p.y = canvas.height + 20
-        if (p.y > canvas.height + 20) p.y = -20
+        // Wrap around edges seamlessly
+        if (p.x < -10) p.x = canvas.width + 10
+        if (p.x > canvas.width + 10) p.x = -10
+        if (p.y < -10) p.y = canvas.height + 10
+        if (p.y > canvas.height + 10) p.y = -10
       }
 
       animId = requestAnimationFrame(draw)
