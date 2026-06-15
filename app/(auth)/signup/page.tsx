@@ -12,35 +12,19 @@ export default function SignupPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
-  const [done, setDone] = useState(false)
   const supabase = createClient()
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    })
+    const { error } = await supabase.auth.signUp({ email, password })
     if (error) {
       toast.error(error.message)
+      setLoading(false)
     } else {
-      setDone(true)
+      toast.success("Account created successfully!")
+      window.location.href = "/profile"
     }
-    setLoading(false)
-  }
-
-  if (done) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          <div className="text-4xl mb-4">📬</div>
-          <h2 className="text-xl font-bold text-gray-950 mb-2">Check your inbox</h2>
-          <p className="text-gray-500 text-sm">We sent a confirmation link to <strong>{email}</strong>.</p>
-        </div>
-      </div>
-    )
   }
 
   return (
