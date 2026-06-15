@@ -22,8 +22,8 @@ export default function SignupPage() {
       toast.error(error.message)
       setLoading(false)
     } else {
-      toast.success("Account created successfully!")
-      window.location.href = "/profile"
+      toast.success("Account created! Please sign in.")
+      window.location.href = "/login"
     }
   }
 
